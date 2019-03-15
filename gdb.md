@@ -1,0 +1,120 @@
+﻿
+# GDB
+
+## 调试的原则
+
+1. **确认原则**
+
+2. 从简单开始
+
+3. 自顶向下
+
+4. 确定段错误（`backtrace`）
+
+5. 通过发出中断确定无限制循环位置
+
+6. 使用二分搜索
+
+## 主要操作
+
+
+### 运行程序
+
+| 命令 | 含义 |
+|:---:|:---:|
+| `-core=<file>` |  调试转储核心 |
+| `-p <pid>` |  调试进程 |
+| `-tty=<device>` | 重定向程序的输入输出 |
+| `-directory=<dir>` | 源代码目录 |
+| `-cd=<dir>` | 工作目录 |
+
+### 暂停机制
+
+| 命令 | 含义 |
+|:---:|:---:|
+| `info break` | 断点列表 |
+| `tbreak <num> [thread <id>] [if <expression>]` | 临时断点 |
+| `break <num> [thread <id>] [if <expression>]` | 持续断点 |
+| `enable <breakpoints>` | 启用断点 |
+| `disable [once] <breakpoints>` | 禁用断点 |
+| `delete [breakpoints]` | 移除断点 |
+| `clear <num>` | 清除断点 |
+| `watch <expression>` | 监视表达式 |
+
+### 单步调试源代码
+
+| 命令 | 含义 |
+|:---:|:---:|
+| `set args <argv>` | 设置程序输入 |
+| `run [argv]` | 开始执行 |
+| `next [count]` | 逐过程 |
+| `step [count]` | 逐语句 |
+| `untill` | 直到退出循环 |
+| `finish` | 直到函数结束 |
+| `continue` | 直接到下一个断点或退出 |
+
+### 检查变量
+
+| 命令 | 含义 |
+|:---:|:---:|
+| `info locals` | 输出名局变量 |
+| `print [/fmt] <expression>` | 输出表达式的值或结构 |
+| `printf fmt [, <argv> ]` | 参见 `C` 语言 `printf` |
+| `display [/fmt] <expression>` | 遇到断点时自动输出 |
+| `commands <breakpoint>` | 附在断点上的语句块 |
+| `call <funcation>` | 调用一个函数 |
+| `print *<pointer>@<lengeth>` | 输出动态数组 |
+| `ptype [/FLAGS] <type>` | 输出类型定义 |
+
+---
+
+| 命令 | 含义 |
+|:---:|:---:|
+| `$<num>` | 值历史 |
+| `set $<var> = <value> | 定义方便变量 |
+| `set <var> = <value>` | 设置变量的值 |
+
+### 移动调用栈
+
+| 命令 | 含义 |
+|:---:|:---:|
+| `info frame` | 打印栈帧 |
+| `frame <id>` | 选择一个栈帧 |
+| `up [count]` | 移动栈帧 |
+| `down [count]` | 移动栈帧 |
+| `backtrace` | 输出整体栈帧 |
+
+### 多线程
+
+| 命令 | 含义 |
+|:---:|:---:|
+| `info threads` | 线程列表 |
+| `thread <id>` | 切换线程 |
+
+### 启动文件的使用
+
+- `.gdbinit`
+
+  放在主目录用于一般途，放在项目特有用途的特定项目的目录中。
+
+- 加载顺序
+
+  加载主目录 --> 加载可执行程序 --> 加载项目目录
+
+## 其它工具
+
+- [CGDB](https://cntofu.com/book/121/index.html)
+
+  一个基于 `curses` 图形库的 `GDB` 图形接口
+
+- [DDD](https://www.gnu.org/software/ddd/)
+
+  `GDB` 的图形化前端
+
+- [LLDB](https://lldb.llvm.org)
+
+  在 `MacOS` 上 `Xcode` 的默认调试器
+
+## 参考
+
+[1]  《软件调试的艺术》
