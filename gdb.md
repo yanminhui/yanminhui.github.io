@@ -66,12 +66,11 @@
 | `print *<pointer>@<lengeth>` | 输出动态数组 |
 | `ptype [/FLAGS] <type>` | 输出类型定义 |
 
----
 
 | 命令 | 含义 |
 |:---:|:---:|
 | `$<num>` | 值历史 |
-| `set $<var> = <value> | 定义方便变量 |
+| `set $<var> = <value>` | 定义方便变量 |
 | `set <var> = <value>` | 设置变量的值 |
 
 ### 移动调用栈
