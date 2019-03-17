@@ -1,6 +1,6 @@
 # Site settings 配置站点
 title: '颜闽辉的博客'
-description: '梳理 C/C++/11/14/17/20, Python2/3, ECMAScript5/6, GNU Linux 等知识。'
+description: '用于梳理编程知识'
 keyword: 'C++, Python, JavaScript, Linux'
 url: 'https://yanminhui.github.io'
 
@@ -10,12 +10,13 @@ baseurl: ''
 # Navigation links
 nav:
   '首页': '/'
-  'GitHub': '/github.html'
+  '博文': '/articles.html'
+  'GitHub': '/githubs.html'
   '标签': '/tags.html'
 
 # Footer
 footer:
-  since: 2017
+  since: 2018
 
 # Author 配置博主信息
 author: '颜闽辉'
@@ -27,7 +28,7 @@ avatar: '/assets/img/profile.jpg'
 search: true
 
 # Night mode
-nightMode: true
+nightMode: false
 
 # Comments 评论功能
 comments:
@@ -59,6 +60,10 @@ sns:
 recommend-tags: true # whether or not display recommend-tags on the sidebar
 recommend-condition-size: 12 # a tag will be recommended if the size of it is more than this value
 
+# Permalink
+# See: https://github.com/kaeyleo/jekyll-theme-H2O/issues/35
+permalink: /:year/:month/:day/:title.html
+
 # Build settings
 paginate: 6
 paginate_path: 'page:num'
@@ -73,9 +78,6 @@ kramdown:
 # RSS
 RSS: false
 
-# Permalink
-# See: https://github.com/kaeyleo/jekyll-theme-H2O/issues/35
-permalink: /:year/:month/:day/:title.html
-
 # Plugins
 plugins: [jekyll-paginate]
+

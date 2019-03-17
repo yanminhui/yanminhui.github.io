@@ -1,7 +1,8 @@
 ---
 layout: default
-home-title: 颜闽辉的博客
-description: GitHub
+title: '博文'
+home-title: '颜闽辉的博客'
+description: '博文'
 ---
 
 {% include header.html %}
@@ -17,7 +18,19 @@ description: GitHub
 
 <main class="g-container home-content">
     <div class="article-list">
-        {% for post in paginator.posts %}
+   
+{% for post in site.posts %}
+    
+    {% assign show_article = true %}
+    {% if post.locations %}
+        {% for loc in post.locations %}
+            {% if loc != 'article' %}
+                {% assign show_article = false %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    {% if show_article %}
             <article class="article-item">
                 {% if post.cover %}
                 <div class="post-cover">
@@ -46,6 +59,7 @@ description: GitHub
                     <time class="post-date" datetime="{{ post.date | date:"%y-%m-%d" }}">{{ post.date | date_to_string }}</time>
                 </footer>
             </article>
+    {% endif %}
         {% endfor %}
 
         {% if paginator.total_pages > 1 %}

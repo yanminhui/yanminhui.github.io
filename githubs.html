@@ -1,8 +1,8 @@
 ---
 layout: default
-title: '首页'
+title: 'GitHub'
 home-title: '颜闽辉的博客'
-description: '用于梳理编程知识'
+description: 'GitHub'
 ---
 
 {% include header.html %}
@@ -18,19 +18,17 @@ description: '用于梳理编程知识'
 
 <main class="g-container home-content">
     <div class="article-list">
-        
-{% for post in paginator.posts %}
+   
+{% for post in site.posts %}
     
-    {% assign show_article = true %}
-    {% comment %}
+    {% assign show_article = false %}
     {% if post.locations %}
         {% for loc in post.locations %}
-            {% if loc == 'index' %}
+            {% if loc == 'github' %}
                 {% assign show_article = true %}
             {% endif %}
         {% endfor %}
     {% endif %}
-    {% endcomment %}
 
     {% if show_article %}
             <article class="article-item">
