@@ -3,6 +3,7 @@ layout: default
 title: 'GitHub'
 home-title: '颜闽辉的博客'
 description: 'GitHub'
+categories: [github]
 ---
 
 {% include header.html %}
@@ -20,14 +21,18 @@ description: 'GitHub'
     <div class="article-list">
    
 {% for post in site.posts %}
-    
-    {% assign show_article = false %}
-    {% if post.locations %}
-        {% for loc in post.locations %}
-            {% if loc == 'github' %}
-                {% assign show_article = true %}
-            {% endif %}
-        {% endfor %}
+ 
+    {% assign show_article = true %}
+    {% if page.categories %}
+        {% assign show_article = false %}
+        {% if post.categories %}
+            {% for cat in post.categories %}
+                {% if page.categories contains cat %}
+                    {% assign show_article = true %}
+                    {% break %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     {% endif %}
 
     {% if show_article %}

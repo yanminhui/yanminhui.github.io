@@ -3,6 +3,7 @@ layout: default
 title: '博文'
 home-title: '颜闽辉的博客'
 description: '博文'
+categories: [article]
 ---
 
 {% include header.html %}
@@ -22,12 +23,16 @@ description: '博文'
 {% for post in site.posts %}
     
     {% assign show_article = true %}
-    {% if post.locations %}
-        {% for loc in post.locations %}
-            {% if loc != 'article' %}
-                {% assign show_article = false %}
-            {% endif %}
-        {% endfor %}
+    {% if page.categories %}
+        {% assign show_article = false %}
+        {% if post.categories %}
+            {% for cat in post.categories %}
+                {% if page.categories contains cat %}
+                    {% assign show_article = true %}
+                    {% break %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     {% endif %}
 
     {% if show_article %}

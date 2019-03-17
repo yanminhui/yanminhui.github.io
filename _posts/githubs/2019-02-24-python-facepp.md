@@ -4,9 +4,8 @@ layout: post
 title: 'Python-FacePP'
 subtitle: 'Python-FacePP for Facial Recognition'
 date: 2019-02-24
-categories: 'GitHub仓库'
+categories: 'github'
 tags: ['GitHub仓库', 'Python']
-locations: github
 
 ---
 
@@ -77,31 +76,4 @@ If you have questions regarding the library, I would like to invite you to
 [open an issue at GitHub](https://github.com/yanminhui/python-facepp/issues/new). 
 Opening an issue at GitHub allows other users and contributors to this library 
 to collaborate.
-
-## License
-
-<img align="right" 
-src="http://opensource.org/trademarks/opensource/OSI-Approved-License-100x137.png">
-
-The class is licensed under the [MIT License](http://opensource.org/licenses/MIT):
-
-Copyright &copy; 2018 [yanminhui](mailto:yanminhui163@163.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 
