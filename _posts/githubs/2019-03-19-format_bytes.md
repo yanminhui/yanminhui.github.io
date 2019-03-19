@@ -1,9 +1,9 @@
-﻿---
+---
 
 layout: post
 title: 'Misc: format_bytes'
 subtitle: '格式化字节数演进过程'
-date: 2019-02-19
+date: 2019-03-19
 categories: ['github', 'article']
 tags: ['GitHub仓库', 'C++']
 
@@ -206,20 +206,19 @@ format_bytes(s, 18446640
     ```
    
    - **BUG** 实例化第三个形参发生歧义
-   
-    修正前一个 BUG 的时候，潜在的引用入了一个新的 BUG，第三个形参是模板类型
-    可能实例化为 `std::size_t`，这时重载的两个函数都是候选函数，为了使它们
-    可以重载，使用 `std::enable_if` 对模板参数类型进行限定。
-    
-    ```.cpp
-    template<typename CharT, typename ByteT, typename IndicatorT
-           , typename = typename std::enable_if<!std::is_integral<IndicatorT>::value>::type>
-    CharT const* format_bytes(std::basic_string<CharT>& repr
-                            , ByteT const bytes
-                            , IndicatorT&& indicator
-                            , std::size_t const decimal=2u
-                            , std::size_t const reduced_unit=1024u);
-    ```
+     修正前一个 BUG 的时候，潜在的引用入了一个新的 BUG，第三个形参是模板类型
+     可能实例化为 `std::size_t`，这时重载的两个函数都是候选函数，为了使它们
+     可以重载，使用 `std::enable_if` 对模板参数类型进行限定。
+     
+     ```.cpp
+     template<typename CharT, typename ByteT, typename IndicatorT
+            , typename = typename std::enable_if<!std::is_integral<IndicatorT>::value>::type>
+     CharT const* format_bytes(std::basic_string<CharT>& repr
+                             , ByteT const bytes
+                             , IndicatorT&& indicator
+                             , std::size_t const decimal=2u
+                             , std::size_t const reduced_unit=1024u);
+     ```
     
   - **需求** 软件在不同的场景下要使用不同的单位表示
   
