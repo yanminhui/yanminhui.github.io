@@ -285,8 +285,8 @@ format_bytes(s, 18446640
       Format4Bytes f4b;
       std::cout << f4b.value(bytes) << std::endl;
       ```
-    
- ### 怎么样持有单位符号表
+
+### 怎么样持有单位符号表
  
 - 根据字符实例化类型传递给函数
 
