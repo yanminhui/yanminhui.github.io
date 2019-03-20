@@ -243,6 +243,156 @@ format_bytes(s, 18446640
                             , std::size_t const reduced_unit=1024u);
     ```
 
+
+10. 如何继续扩展
+
+    _接下来，也许会遇到新的要求，考虑以下几种情况：_
+    
+    - 显示千分位分隔符 `thousands_sep`
+    
+      > 296,866,508,800 字节
+    
+    - 剥离小数部分尾置零 `strip_suffix_zero`
+    
+      比如，把 `17.60 MB` 修饰成 `17.6 MB`
+    
+    - 提示数字位数 `hint_digits`
+    
+      > 9.13 GB 可用，共 20.0 GB  
+      > 70.7 GB 可用，共 276 GB
+      
+      看一下 windows 下资源管理器，显示的分区空间，尽量让显示的内容
+      保持三位数字，不足三位小数部分填充 `0`，多于三位尽可能剥离多余的位数。
+      
+    _思考几种实现方式：_
+    
+    - 通过增加默认参数扩展函数原型
+    
+    - 定制一个结构标志来存储不同情形下的参数
+    
+    - 编写垫片函数对结果进行修复
+    
+    - 推进成一个类
+    
+      ```.cpp
+      template<typename CharT=char>
+      struct Format4Bytes final
+      {
+        template<typename ByteT>
+        std::basic_string<CharT> value(ByteT const bytes) const;
+      };
+      
+      Format4Bytes f4b;
+      std::cout << f4b.value(bytes) << std::endl;
+      ```
+    
+ ### 怎么样持有单位符号表
+ 
+- 根据字符实例化类型传递给函数
+
+  ```.cpp
+  auto indicators = { "Bytes", "KB", "MB", "GB" };
+  std::string repr;
+  format_bytes(repr, 18446640
+             , std::begin(indicators), std::end(indicators)
+             , "MB", 2u, 1024u);
+  ```
+
+- 定义一个模板类
+
+  在模板类中定义静态数据，通过模板参数实例化成不同类型。
+  
+  ```.cpp
+  constexpr inds = Indicators<char>::value;
+  std::string repr;
+  format_bytes(repr, 18446640
+             , std::begin(inds, std::end(inds)
+             , "MB", 2u, 1024u);
+  ```
+
+- 使用局部类
+
+  前面提到的两种方式，第一个方式只能在调用处定义，不便使用，而第二个方式，
+  将无相关的数据显露到外部作用域中。
+  
+  C++局部类带有诸多限制，比如禁用范型、不能有静态成员等，
+  而在这里通过重载成员函数持有单位符号表则刚好适当，既
+  不暴露到外部作用域，定义在函数中也便于理解。
+  
+  ```.cpp
+  template<typename CharT, typename ByteT, typename IndicatorT
+         , typename = typename std::enable_if<!std::is_integral<IndicatorT>::value>::type>
+  CharT const* format_bytes(std::basic_string<CharT>& repr
+                          , ByteT const bytes
+                          , IndicatorT&& indicator
+                          , std::size_t const decimal=2u
+                          , std::size_t const reduced_unit=1024u)
+  {
+      struct Indicators final
+      {
+          char const* invoke(std::basic_string<char>& repr
+                           , ByteT const bytes
+                           , std::basic_string<char> const& indicator
+                           , std::size_t const decimal
+                           , std::size_t reduced_unit) const
+          {
+              constexpr char const* v[] = {"Bytes", "KB", "MB", "GB"
+                                         , "TB", "PB", "EB", "ZB", "YB"};
+              constexpr auto c = sizeof(v) / sizeof(v[0]);
+              return format_bytes(repr, bytes, v, v+c
+                                , indicator, decimal, reduced_unit);
+          }
+
+          wchar_t const* invoke(std::basic_string<wchar_t>& repr
+                              , ByteT const bytes
+                              , std::basic_string<wchar_t> const& indicator
+                              , std::size_t const decimal
+                              , std::size_t reduced_unit) const
+          {
+              constexpr wchar_t const* v[] = {L"Bytes", L"KB", L"MB", L"GB"
+                                            , L"TB", L"PB", L"EB", L"ZB", L"YB"};
+              constexpr auto c = sizeof(v) / sizeof(v[0]);
+              return format_bytes(repr, bytes, v, v+c
+                                , indicator, decimal, reduced_unit);
+          }
+      };
+
+      constexpr Indicators ind;
+      return ind.invoke(repr, bytes, indicator
+                      , decimal, reduced_unit);
+  }
+  ```
+
+### C++ 中的 C 标准库与 C 的标准库有什么不同
+
+在实际项目中会看到有的 `#include <cmath>`，而有的 `#include <math.h>`，带
+有 `c` 前缀的是 C++ 版本。C++ 对其中的函数原型进行了修复，先看下 C 标准库
+下 `pow` 的函数原型：
+
+```.c
+#include <math.h>
+
+double pow(double x, double y);
+float powf(float x, float y);
+long double powl(long double x, long double y);
+```
+
+再看一下 [C++ 版本](https://zh.cppreference.com/w/cpp/numeric/math/pow)：
+
+```.cpp
+#include <cmath>
+
+double pow(double base, double exp);
+double pow(double base, int iexp);                // c++
+float powf(float base, float exp);
+float pow(float base, float exp);                 // c++
+double pow(double base, int iexp);                // c++
+Promoted pow(Arithmeticl base, Arithmetic2 exp);  // c++
+// ...
+```
+
+可见 C++ 对不同类型进行了重载，尽量防止在调用过程中的类型转换。
+
 [0]: https://github.com/yanminhui/misc/blob/master/cpp/format_bytes.hpp "源代码"
 [1]: https://zh.cppreference.com/w/cpp/language/attributes/deprecated "deprecated"
 [2]: https://en.wikipedia.org/wiki/Kilobyte "SI & IEC"
