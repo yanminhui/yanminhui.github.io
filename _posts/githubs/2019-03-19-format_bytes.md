@@ -18,7 +18,7 @@ or PB (pebibytes)...
 
 ## [Function Prototype][0]
 
-```.cpp
+```cpp
 template<typename CharT, typename ByteT>
 CharT const* format_bytes(std::basic_string<CharT>& repr             // (1)
                         , ByteT const bytes
@@ -52,7 +52,7 @@ CharT const* format_bytes(std::basic_string<CharT>& repr             // (4)
 
 ## Usage
 
-```.cpp
+```cpp
 using namespace ymh::misc;
 
 std::string s;
@@ -61,7 +61,7 @@ std::cout << format_bytes(s, 18446640) << std::endl;
 
 equal to:
 
-```.cpp
+```cpp
 std::wstring wcs;  // unicode
 auto indicators = { "Bytes", "KB", "MB", "GB" };
 format_bytes(s, 18446640
@@ -81,13 +81,13 @@ format_bytes(s, 18446640
 
 1. **雏型** 将字节数转换成易读形式字符串在界面上显示
    
-    ```.cpp
+    ```cpp
     std::string format_bytes(std::size_t bytes);
     ```
           
 2. **需求** 增加格式化小数精度和转换单位大小
       
-    ```.cpp
+    ```cpp
     std::string format_bytes(std::size_t bytes
                            , std::size_t decimal=2u
                            , std::size_t reduced_unit=1024u);
@@ -98,7 +98,7 @@ format_bytes(s, 18446640
     这种情况可通过增加一个默认形参使其支持，考虑定制 `reduced_unit` 比较少发生，
     又要兼容原来的调用形式，这里通过重载的形式调整形参顺序。  
 
-    ```.cpp
+    ```cpp
     std::string format_bytes(std::size_t bytes
                            , std::size_t decimal=2u
                            , std::size_t reduced_unit=1024u);
@@ -124,7 +124,7 @@ format_bytes(s, 18446640
 
     > 在一定范围内，整型精度高，浮点类型可表达的有效范围大。
 
-    ```.cpp
+    ```cpp
     template<typename ByteT>
     std::string format_bytes(ByteT bytes
                            , std::size_t decimal=2u
@@ -146,7 +146,7 @@ format_bytes(s, 18446640
     想要解决兼容问题，给新的实现一个新的名字是一种方式（比如`format_bytes_ex`），
     让原来的函数来调用，并使用 [函数属性][1] 标记废除，由编译器来提示用户逐步调用新名字。
 
-    ```.cpp
+    ```cpp
     template<typename CharT, typename ByteT>
     void format_bytes(std::basic_string<CharT>& repr
                     , ByteT bytes
@@ -165,7 +165,7 @@ format_bytes(s, 18446640
     新的要求是可能应用使用 Qt 界面框架，统一使用 `QString` 表示字符串，
     现在的形式要求先用 `std::string` 去调用，再将结果转换到目标形式。
 
-    ```.cpp
+    ```cpp
     auto bytes = 18446640;
     std::string repr;
 
@@ -175,7 +175,7 @@ format_bytes(s, 18446640
 
     优化一下，让函数也返回字符串指针，使用起来简洁一点。
 
-    ```.cpp
+    ```cpp
     auto bytes = 18446640;
     std::string repr;
 
@@ -184,7 +184,7 @@ format_bytes(s, 18446640
 
 7. **BUG** 将字面量字符串传给 `indicator` 时报错
 
-    ```.cpp
+    ```cpp
     auto bytes = 18446640;
     std::string repr;
 
@@ -200,7 +200,7 @@ format_bytes(s, 18446640
     
     结合以上两点，就给它声明为右值引用吧。
     
-    ```.cpp
+    ```cpp
     template<typename CharT, typename ByteT, typename IndicatorT>
     void format_bytes(std::basic_string<CharT>& repr
                     , ByteT bytes
@@ -216,7 +216,7 @@ format_bytes(s, 18446640
     这时重载的两个函数都是候选函数，为了使它们可以重载，
     使用 `std::enable_if` 对模板参数类型进行限定。
 
-    ```.cpp
+    ```cpp
     template<typename CharT, typename ByteT, typename IndicatorT
            , typename = typename std::enable_if<!std::is_integral<IndicatorT>::value>::type>
     CharT const* format_bytes(std::basic_string<CharT>& repr
@@ -232,7 +232,7 @@ format_bytes(s, 18446640
     单位符号也要定制了，标准库的一般做法是传递一个前闭后开的递代器范围 [first, last)，
     也可以不这么做，未来也许 [`range`][3] 变得流行是一个更棒的方式。
 
-    ```.cpp
+    ```cpp
     template<typename CharT, typename ByteT
            , typename InputIt, typename IndicatorT>
     CharT const* format_bytes(std::basic_string<CharT>& repr
@@ -274,7 +274,7 @@ format_bytes(s, 18446640
     
     - 推进成一个类
     
-      ```.cpp
+      ```cpp
       template<typename CharT=char>
       struct Format4Bytes final
       {
@@ -290,7 +290,7 @@ format_bytes(s, 18446640
  
 - 根据字符实例化类型传递给函数
 
-  ```.cpp
+  ```cpp
   auto indicators = { "Bytes", "KB", "MB", "GB" };
   std::string repr;
   format_bytes(repr, 18446640
@@ -302,7 +302,7 @@ format_bytes(s, 18446640
 
   在模板类中定义静态数据，通过模板参数实例化成不同类型。
   
-  ```.cpp
+  ```cpp
   constexpr inds = Indicators<char>::value;
   std::string repr;
   format_bytes(repr, 18446640
@@ -319,7 +319,7 @@ format_bytes(s, 18446640
   而在这里通过重载成员函数持有单位符号表则刚好适当，既
   不暴露到外部作用域，定义在函数中也便于理解。
   
-  ```.cpp
+  ```cpp
   template<typename CharT, typename ByteT, typename IndicatorT
          , typename = typename std::enable_if<!std::is_integral<IndicatorT>::value>::type>
   CharT const* format_bytes(std::basic_string<CharT>& repr
@@ -379,7 +379,7 @@ long double powl(long double x, long double y);
 
 再看一下 [C++ 版本](https://zh.cppreference.com/w/cpp/numeric/math/pow)：
 
-```.cpp
+```cpp
 #include <cmath>
 
 double pow(double base, double exp);

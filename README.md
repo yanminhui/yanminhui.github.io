@@ -1,3 +1,3 @@
 # yanminhui.github.io
 
-GitHub Pages.
+[GitHub Pages](https://yanminhui.github.io)
