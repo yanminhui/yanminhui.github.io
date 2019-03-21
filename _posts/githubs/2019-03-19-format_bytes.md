@@ -369,7 +369,7 @@ format_bytes(s, 18446640
 有 `c` 前缀的是 C++ 版本。C++ 对其中的函数原型进行了修复，先看下 C 标准库
 下 `pow` 的函数原型：
 
-```.c
+```c
 #include <math.h>
 
 double pow(double x, double y);
