@@ -19,7 +19,7 @@ tags: '摘录文章'
 
 ## DropBox Djinni
 
-- [基于Djinni的跨平台C%2B%2B移动开发的实践分享](../../../assets/pdf/gmtc2018-djinni.pdf)
+- [基于Djinni的跨平台C++移动开发的实践分享](../../../assets/pdf/gmtc2018-djinni.pdf)
 
 - [Djinni](https://github.com/dropbox/djinni)
 
