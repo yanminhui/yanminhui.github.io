@@ -17,6 +17,12 @@ tags: '摘录文章'
 
 - [Part 3 Javacript](https://www.skyscanner.net/company-news/developing-mobile-cross-platform-library-part-3-javascript)
 
+## DropBox Djinni
+
+- [基于Djinni的跨平台C%2B%2B移动开发的实践分享](../../../assets/pdf/gmtc2018-djinni.pdf)
+
+- [Djinni](https://github.com/dropbox/djinni)
+
 ## Reference
 
 - [From C++ to Objective-C: A quick guide for practical programmers](https://www.codeproject.com/Articles/770577/From-Cplusplus-to-Objective-C-A-quick-guide-for-pr)
