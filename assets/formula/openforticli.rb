@@ -4,6 +4,11 @@ class Openforticli < Formula
   url "https://github.com/yanminhui/openforticli/archive/v1.17.1.20211031.tar.gz"
   sha256 "92ab71fcb2f9b7e87f29fcfa29bbb9b8aee0be217d298447935562db5b646f65"
   license "GPL-3.0-or-later"
+  
+  bottle do
+    root_url "https://github.com/yanminhui/openforticli/releases/download/v1.17.1.20211031"
+    sha256 big_sur: "c399d6d8e0279b7352c704819fc3e6ee98ee560cf6bc30c8b659ae17ef0addfb"
+  end
 
   depends_on "autoconf" => :build
   depends_on "automake" => :build
