@@ -173,7 +173,7 @@ struct return_type {
 | Expression                     | Note                                                                                               |
 | :----------------------------- | :------------------------------------------------------------------------------------------------- |
 | bool await_ready()             | `await_resume()` 要继续的条件是否准备好, true 将跳过 `await_suspend()`，否则进入 `await_resume()`. |
-| auto await_suspend(handle<> h) | 返回值可以是 void (挂起), bool (true 挂起, false 不挂起), handle (不挂起).                         |
+| auto await_suspend(handle<> h) | suspend if void, true, noop_coroutine(); continue if false; h.resume if valid handle.              |
 | T await_resume()               | 返回值为 `co_await expr;` 的返回值.                                                                |
 
 > `await_ready()` 是个优化，没有它，`await_suspend(h)` 通过返回值也可以决定要不要挂起。
