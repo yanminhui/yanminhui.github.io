@@ -179,6 +179,8 @@ struct return_type {
 > `await_ready()` 是个优化，没有它，`await_suspend(h)` 通过返回值也可以决定要不要挂起。
 > 
 > 编译器调用 `await_suspend()` 需要将当前协程状态保存到堆上是个代价，如果 `await_ready()` 返回 true，可以跳过这个过程，直接进入 `await_resume()` 是个优化。
+> 
+> `await_suspend()` 应避免同步激活协程，容易陷入无限递归，见 [GH-154](https://github.com/alibaba/async_simple/pull/155/commits/871000a991f478e3d28fd866e5a062a8db4d18d6)。
 
 <img src="https://bqivka.bn1304.livefilestore.com/y4mfcDYFCH6SMe0hrR74BNJzFaua5hK_tksI8vp8pdRykhjrX1yuUOQoHrhFVFu9ci5icB6lOrMGLwaC74PxZthzgw8u-O4yNDAgEnkT5EMTPv7CcAVmOX6DHF_Ofi44GE33IJgYheftmKUrKX46k9SubyycOFSpsjxd_2Vj5bKAwzML-6geswyforIr-YIeBH1_B82cMEKrJnsOf5kJDOfbQ?width=1024&height=692&cropmode=none" width="600px">
 
