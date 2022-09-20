@@ -1,0 +1,20 @@
+---
+
+layout: post
+title: '阿里 async_simple'
+subtitle: 'alibaba async_simple'
+date: 2022-09-20
+categories: [article]
+tags: 'C++' 
+
+---
+
+![async_simpale](https://www.plantuml.com/plantuml/png/dLRBReCm4Bpp5LPpWGFvW0YXljGgKe_jeQggo85jOzKn4HZIzEkxnYxOnQPARvPPx-pEpAwuR2IjPRldKNJ00olOWGf9dXgeestrIIxKYTnK9LoGnGDxtybduBmwJg9lghfg9HDmruf2iaeu4G_qw-HSt351-TMHCeb084g2O1fmBV0AFpgWzpMSVYNSRqiw3teBaXOxA8Sev-jZVK9yoIpyg6ysVLbSynPUStzVAv9bQz5L7v3d4SMhZahmXux5WuZy4IEOecX5c62IKRvfskQ0PSN9YfZZXl8ZFJKZf7emGI1PckfKqNAvD0tz9E-rZWlA-POM7qdKPx0hy7BgRpWaGE3UWfd8CjkrW0uL6c2dceO05H5JADrpbeQRBQeDLRx4G-zFz4cSA0v7myGgIJ8MPLb9Kvg6oGmJP2EiI5-3JKW_GduJPORRrCcGPLUcGDGjuBwWnv656cHR2zA5tsfNwRXDHx64k4j2DGw-_2FTczeCTkFEgXWujs-TAIXXVYYDHBcJmSFt6KuRw7TJEWAS9NiDJRi7LGL-onvpuzg0p3qg-z8endvMXCs8mwLrtvjhRfBiVDQU2SsGMJ6nBZynU-YVOp4tgjfySwyzwyPnR7B-1Za7Qs9dTx5P6bXRn576lsSdKFCRrd69bNxgyaii3ly7lW40 "async_simpale")
+> [https://github.com/alibaba/async_simple/discussions/148](https://github.com/alibaba/async_simple/discussions/148)
+
+![async_simple](https://www.plantuml.com/plantuml/png/TLDDJyCm3BttL_WqbKdb3p1D0mGd3WXDI9mYBpKia2LJFiRAs7ydyTgjT7294hzdv_avcVc0BiILBgH6x-41lvf7PrVAqmrwWbq1uADVawa5waziF2YZWa8jsd1vaIZtog2-_aGLoC5hFlJWX4lB861UHN1e_AjrgvAZkD0q6XsmlCy5dmZhfYiupBgDpf49TrkICLYN-I-ATFqVdy5MXxCnA4DYYQRMD9c2aDQaICIWhBbAdAxi60IrswjYNvmRnEO0H-2DWd0KeZF2Bjv91hO5O6DL3IsmGHsfV4wjygv7YEOWfqutIbfd9GVV0EQZbEwZxWhENJEPJo6uvgaBxulXr2RVLTLNsXT_7EkfpoI-E_0jh8aVHdcVr4hKUe7o8qCBQpKep-DXxdDkfJFUhibXgf9y5Zm4fYJ97Q5z1od2oDauUffvCiwstR7gSLLD_sehEI6NL4TDF8jTrq9D0UNowD39cjy9VNSuUL1lex0ycKNRh9m1dtqxWtuvqZOy80tri0ekUNav7QgRfL-KFkWF "async_simple")
+> [https://github.com/alibaba/async_simple/pull/155](https://github.com/alibaba/async_simple/pull/155)
+
+## Reference
+
+- [async_simple](https://github.com/alibaba/async_simple)
