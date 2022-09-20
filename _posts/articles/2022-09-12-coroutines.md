@@ -196,3 +196,4 @@ struct return_type {
 - [My tutorial and take on C++20 coroutines](https://www.scs.stanford.edu/~dm/blog/c++-coroutines.html)
 - [Exploring MSVC Coroutine](https://luncliff.github.io/coroutine/articles/exploring-msvc-coroutine/)
 - [C++ Coroutines](https://lewissbaker.github.io/)
+- [Coroutines and Reference Parameters](https://toby-allsopp.github.io/2017/04/22/coroutines-reference-params.html)
