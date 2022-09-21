@@ -111,7 +111,7 @@ auto fibonacci(int n) {
 
 | Expression                             | Note                                                                         |
 | :------------------------------------- | :--------------------------------------------------------------------------- |
-| P{}                                    | Promise must be default constructible                                        |
+| P{}                                    | Constructor can as same as coroutine func or default constructor.            |
 | corountine_trait p.get_return_object() | The return value of funtion. It can be future<T>, or some user-defined type. |
 | awaitable p.initial_suspend()          | If return suspend, suspends at initial suspend point.                        |
 | awaitable p.final_suspend()            | If return suspend, suspends at final suspend point.                          |
