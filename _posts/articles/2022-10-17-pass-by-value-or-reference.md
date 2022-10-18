@@ -111,8 +111,4 @@ _如上，`const shared_ptr<T>&` 产生了间接引用，实现中拷贝时增�
 SortItemsImpl::SortItemsImpl(std::shared_ptr<TextboxListener> listener) {
     this->m_listener = std::move(listener);
 }
-
-SortItemsImpl::SortItemsImpl(std::shared_ptr<TextboxListener>&& listener) {
-    this->m_listener = std::move(listener);
-}
 ```
