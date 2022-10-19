@@ -61,6 +61,7 @@ public:
     void set_name(std::string&& name) noexcept { name_ = std::move(name); }
 };
 ```
+> 从 C++17 开始，应[用 `std::string_view` 代替 `const std::string&`](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0506r2.pdf)，当实参是字符串字面量时，它能避免构造 `std::string` 临时对象。
 
 上述所述的是针对当 `set_name` 作为成员函数时的场景，当 `std::string` 为作为构造函数的形参时就不存在该问题，因为在构造过程中成员变量不存在已经分配的存储，总是需要申请存储来存放源字符串，或接管源字符串的存储。
 
