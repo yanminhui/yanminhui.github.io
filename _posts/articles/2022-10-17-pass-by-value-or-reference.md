@@ -37,13 +37,14 @@ template<class InputIterator, class Function>
 }
 ```
 
-_**错误做法：** 在工作中许多程序员忽略了这一点，往往将其按引用传递，如下：[ReadFile](https://github.com/alibaba/async_simple/blob/main/demo_example/ReadFiles.cpp)_
+从 C++11 开始，可以考虑使用前向转发引用（`fowarding reference`），但应确保算法只调用函数对象一次，否则可能引入副作用，见 [How do correctly use a callable passed through forwarding reference?](https://stackoverflow.com/questions/55786775/how-do-correctly-use-a-callable-passed-through-forwarding-reference)
+
+我们可以看到 STL 算法库通常会调用传入的谓词参数多次，所以使用拷贝，而像 `std::invoke` 只会调用可调用对象一次，所以使用前向转发引用。
+
+_**错误做法：** 在工作中许多程序员忽略了这一点，往往将其按引用传递，如下：_
 
 ```.cpp
-// line 76:
-// It is not travial to implement an asynchronous do_for_each.
-template <Range RangeTy, typename Callable>
-Future<Unit> do_for_each(RangeTy &&Range, Callable &&func) {
+void do_for_each(const std::vector<int>& v, const std::function<void(int)>& func) {
     // ...
 }
 ```
