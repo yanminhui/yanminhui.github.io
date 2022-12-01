@@ -5,7 +5,7 @@ title: '四人帮的 23 种设计模式'
 subtitle: 'The 23 Gang of Four Design Patterns'
 date: 2022-10-12
 categories: [article]
-tags: 'Design Patterns' 
+tags: 'DesignPatterns' 
 
 ---
 
