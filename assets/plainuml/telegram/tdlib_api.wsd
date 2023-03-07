@@ -1,0 +1,66 @@
+@startuml
+
+abstract TlObject #LightGreen {
+    int32_t get_id()
+}
+
+abstract Object #LightGreen {}
+TlObject <|-- Object
+
+abstract Function #LightGreen {}
+TlObject <|-- Function
+
+struct Request #LightGreen {
+    uint64_t request_id
+    object_ptr<Function> function
+}
+Request *..> Function
+
+struct Response #LightGreen {
+    uint64_t request_id
+    object_ptr<Object> object
+}
+Response *..> Object
+
+class MultiImpl {
+  void send(ClientId client_id, RequestId request_id, Function request)
+
+  - ConcurrentScheduler concurrent_scheduler_
+  - thread scheduler_thread_
+  - ActorOwn<MultiTd> multi_td_
+  - {static} uint32 current_id_
+}
+
+class TdReceiver {
+    Response receive(double timeout, bool from_manager)
+    TdCallback> create_callback(ClientId client_id)
+
+    - MpscPollableQueue<Response> output_queue_
+    - int output_queue_ready_cnt_
+    - bool receive_lock_
+}
+
+class ClientImpl {
+  void send(Request request)
+  Response receive(double timeout)
+
+  - MultiImpl multi_impl_
+  - TdReceiver receiver_
+  - int32 td_id_
+}
+ClientImpl *--> MultiImpl: create by MultiImplPool
+ClientImpl *--> TdReceiver: mailbox
+
+class Client #LightGreen {
+    {static} Response execute(Request &&request)
+
+    void send(Request &&request)
+    Response receive(double timeout)
+
+    - ClientImpl impl_
+}
+Client ..> Request: <use>
+Client ..> Response: <use>
+Client *--> ClientImpl: <hold> for net request
+
+@enduml
