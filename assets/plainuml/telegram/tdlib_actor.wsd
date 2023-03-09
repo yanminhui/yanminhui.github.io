@@ -1,0 +1,79 @@
+@startuml
+
+enum EventType { 
+    NoType
+    Start
+    Stop
+    Yield
+    Timeout
+    Hangup
+    Raw
+    Custom
+}
+
+struct Event {
+    EventType type_
+    Data data_
+}
+Event "1" *--> "1" EventType
+
+struct ActorInfo {
+    + int sched_id_
+    + Actor* actor_
+    + bool is_running_
+    + vector<Event> mailbox_
+}
+ActorInfo "1" o--> "n" Event
+
+interface Actor {
+    void start_up()
+    void tear_down()
+    void wakeup()
+    void hangup()
+    void yield()
+
+    - ObjectPool<ActorInfo>::OwnerPtr info_
+}
+Actor *--> ActorInfo
+
+class ServiceActor {
+    void loop()
+
+    - bool subscribed_
+    - ptr<MpscPollableQueue<EventFull>> inbound_
+}
+Actor <|-- ServiceActor
+
+class Td {
+    void request(uint64 request_id, tl_object_ptr<td_api::Function> function)
+}
+Actor <|-- Td
+
+class Scheduler {
+    void init()
+    void run(Timestamp timeout)
+    void finish()
+
+    ActorOwn<ActorT> register_actor(Slice name, ActorT* actor, int32 sched_id)
+    void send(ActorRef actor_ref, Event&& event)
+
+    - ServiceActor service_actor_
+    - ListNode pending_actors_list_
+    - ListNode ready_actors_list_
+
+    - MpscPollableQueue<EventFull> inbound_queue_
+    - vector<std::shared_ptr<MpscPollableQueue<EventFull>> outbound_queues_
+}
+Scheduler "1" *--> "1" ServiceActor: for sleep on scheduler
+
+class ConcurrentScheduler {
+    void start()
+    bool run_main(Timestamp timeout)
+    void finish()
+
+    - vector<unique_ptr<Scheduler>> schedulers_
+    - vector<std::thread> threads_
+}
+ConcurrentScheduler "1" *--> "n" Scheduler
+
+@enduml
