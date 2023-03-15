@@ -1,0 +1,21 @@
+@startuml
+
+participant Client as C
+participant Server as S
+
+autonumber
+C --> C: gen <color: red>**nonce**</color>
+C -> S: req_pq_multi(<color: red>**nonce**</color>)
+S --> S: gen <color: red>**server_nonce、pq、server_pk_fingerprints**</color>
+C <- S: on_res_pq(<color: red>**nonce, server_nonce, pq, server_pk_fingerprints**</color>)
+C --> C: gen <color: red>**new_nonce**</color>
+C -> S: req_dh_params(<color: red>**nonce, server_nonce, p, q, server_pk_fingerprints**</color>, <color: green>**new_nonce**</color>)
+S --> S: gen <color: red>**a**</color>, then calc <color: red>**g_a**</color>
+C <- S: on_dh_params(<color: red>**nonce, server_nonce**</color>, <color: green>**g, dh_prime, g_a**</color>)
+C --> C: gen <color: red>**b**</color>, then calc <color: red>**g_b, auth_key**</color>
+C -> S: set_client_dh_params(<color: red>**nonce, server_nonce**</color>, <color: green>**g_b**</color>)
+S --> S: calc <color: red>**auth_key, new_nonce_hash1**</color>
+C <- S: on_dh_gen_response(<color: red>**nonce, server_nonce, new_nonce_hash1**</color>)
+C --> C: check <color: red>**new_nonce_hash1**</color>
+
+@enduml
