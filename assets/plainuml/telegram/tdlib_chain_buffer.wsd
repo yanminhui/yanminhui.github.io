@@ -1,0 +1,98 @@
+@startuml
+
+struct BufferRaw {
+    size_t data_size_
+    size_t begin_
+    size_t end_
+
+    int32 ref_cnt_
+    bool has_writer_
+    bool was_reader_
+
+    unsigned char data_[1]
+}
+
+class Slice {
+    - const char *s_
+    - size_t len_
+}
+
+class BufferSlice {
+    - BufferReaderPtr buffer_
+    - size_t begin_
+    - size_t end_
+}
+BufferSlice "1" *--> "1" BufferRaw
+BufferSlice ..> Slice
+
+class BufferWriter {
+    MutableSlice prepare_prepend()
+    void confirm_prepend(size_t size)
+    
+    MutableSlice as_mutable_slice()
+    
+    MutableSlice prepare_append()
+    void confirm_append(size_t size)
+
+    - BufferWriterPtr buffer_
+}
+BufferWriter "1" *--> "1" BufferRaw
+
+struct ChainBufferNode {
+    BufferSlice slice
+    ReaderPtr next_
+    bool sync_flag_
+}
+ChainBufferNode "1" *--> "1" BufferSlice
+
+class ChainBufferIterator {
+    - ChainBufferNodeReaderPtr head_
+    - BufferSlice reader_
+    - bool need_sync_
+    - size_t offset_
+}
+ChainBufferIterator "1" *--> "1" ChainBufferNode
+
+class ChainBufferReader {
+    void sync_with_writer()
+    size_t size()
+    Slice prepare_read()
+    void confirm_read(size_t size)
+    size_t advance(size_t offset, MutableSlice dest)
+    ChainBufferReader cut_head(size_t offset)
+
+    - ChainBufferIterator begin_
+    - ChainBufferIterator end_
+    - bool sync_flag_
+}
+ChainBufferReader "1" *--> "n" ChainBufferIterator
+
+class ChainBufferWriter {
+    MutableSlice prepare_append(size_t hint)
+    MutableSlice prepare_append_at_least(size_t size)
+    void confirm_append(size_t size)
+
+    ChainBufferReader extract_reader() 
+
+    - BufferWriter writer_
+    - ChainBufferNodeWriterPtr tail_
+    - ChainBufferNodeReaderPtr head_
+}
+ChainBufferWriter "1" o--> "n" ChainBufferNode
+ChainBufferWriter "1" o--> "1" BufferWriter
+ChainBufferWriter ..> ChainBufferReader
+
+class BufferBuilder {
+    size_t size()
+    BufferSlice extract()
+
+    void append(BufferSlice slice)
+    void prepend(BufferSlice slice)
+
+    - BufferWriter buffer_writer_
+    - vector<BufferSlice> to_append_
+    - vector<BufferSlice> to_prepend_
+}
+BufferBuilder "1" *--> "1" BufferWriter
+
+@enduml
