@@ -1,0 +1,28 @@
+@startuml
+start
+partition conan-create/export-pkg {
+    partition conan-build {
+        partition conan-install {
+            :config_option();
+            :configure();
+            :requirements();
+            :build_requirements();
+            :validate();
+            partition conan-source {
+                :layout();
+                if (conan-source/create) then
+                    #HotPink:source();
+                endif
+            }
+            :generate();
+        }
+        if (conan-build/create) then
+            #HotPink:build();
+        endif
+    }
+    :package();
+    :package_info();
+    :test_package;
+}
+stop
+@enduml
