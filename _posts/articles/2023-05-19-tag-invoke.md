@@ -138,7 +138,7 @@ using namespace lib1;
 print(x);       // #2 lib2::print -- EXPECTED
 ```
 
-`tag_invoke` 本质上仍为 CPO，然后用个 CPO 通过将需要自定义的 CPO 提升为函数参数来统一自定义函数的名称。
+`tag_invoke` 本质上仍为 CPO，然后用这个 CPO 通过将需要自定义的 CPO 提升为函数参数来统一自定义函数的名称。
 
 ## [Customisable Function Prototype](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2547r0.pdf)
 
