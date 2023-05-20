@@ -88,7 +88,7 @@ print(x);       // #3 lib2::print -- EXPECTED
 
 ## [tag_invoke](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1895r0.pdf)
 
-[Run this code](https://godbolt.org/z/K8d5bbcdE)
+[Run this code](https://godbolt.org/z/M96rGaW7a)
 ```.cpp
 #include <iostream>
 #include <type_traits>
@@ -112,7 +112,7 @@ struct print_t {
 
     template <class T>
     constexpr void operator()(T&& t) const {
-        return tag_invoke(print_t{}, std::forward<T>(t));
+        return lib1::tag_invoke(print_t{}, std::forward<T>(t));
     }
 };
 
