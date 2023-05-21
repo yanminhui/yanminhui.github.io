@@ -74,7 +74,7 @@ int main() {
 
 ## 自定义 `shared_from`
 
-[Run this code](https://godbolt.org/z/eW66cxnqs)
+[Run this code](https://godbolt.org/z/czqKGWPPn)
 ```.cpp
 #include <cassert>
 #include <concepts>
@@ -101,10 +101,13 @@ struct shared_from_t
     constexpr std::shared_ptr<T> operator()(T* p) const 
     {
         assert(p);
-        if constexpr (with_dynamic_cast) {
-            return std::dynamic_pointer_cast<T>(p->shared_from_this()); 
+        auto sp = p->shared_from_this();
+        if constexpr (std::same_as<T, typename decltype(sp)::element_type>) {
+            return sp;
+        } else if constexpr (with_dynamic_cast) {
+            return std::dynamic_pointer_cast<T>(sp); 
         } else {
-            return std::static_pointer_cast<T>(p->shared_from_this());
+            return std::static_pointer_cast<T>(sp);
         }
     }
 };
