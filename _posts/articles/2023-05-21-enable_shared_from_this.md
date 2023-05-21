@@ -68,40 +68,73 @@ int main() {
 }
 ```
 
-为了解决前面的问题，在实际工作中，可以看到类似上面的代码，引入多继承来解决。这也存在一些问题：
+为了解决前面的问题，在实际工作中，可以看到类似上面的代码（[相似问题](https://www.codeproject.com/Articles/286304/Solution-for-multiple-enable-shared-from-this-in-i)），引入多继承来解决。这也存在一些问题：
 - `ssl_session` 无法通过继承复用 `session` 的功能，只能通过聚合 `session` 作为成员变量处理。
 - 当继承链长时，通过聚合访问里层函数需要长的名字引用（e.g. `pssl->psession->...`）。
 
-## 覆盖 `shared_from_this()`
+## 自定义 `shared_from`
 
-[Run this code](https://godbolt.org/z/b7azhsvf4)
+[Run this code](https://godbolt.org/z/eW66cxnqs)
 ```.cpp
+#include <cassert>
+#include <concepts>
 #include <iostream>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
-struct base_session
-    : std::enable_shared_from_this<base_session>
+// concept: derived_from_enable_shared_from_this<T>
+template <class T>
+concept derived_from_enable_shared_from_this = requires(T obj) {
+    obj.shared_from_this();
+    requires std::derived_from<
+        std::remove_cvref_t<T>, std::enable_shared_from_this<
+            std::remove_cvref_t<typename decltype(obj.shared_from_this())::element_type>>>;
+};
+
+// cpo: shared_from(T* p)
+//      shared_from_with_dynamic_cast(T* p)
+template <bool with_dynamic_cast = false>
+struct shared_from_t 
 {
-    template <class T>
-    static std::shared_ptr<T> shared_from_this(T* self) { // T* for ADL
-        using base = std::enable_shared_from_this<base_session>;
-        return std::static_pointer_cast<T>(self->base::shared_from_this());
+    template <derived_from_enable_shared_from_this T>
+    constexpr std::shared_ptr<T> operator()(T* p) const 
+    {
+        assert(p);
+        if constexpr (with_dynamic_cast) {
+            return std::dynamic_pointer_cast<T>(p->shared_from_this()); 
+        } else {
+            return std::static_pointer_cast<T>(p->shared_from_this());
+        }
     }
 };
 
-struct session : base_session
+constexpr shared_from_t shared_from;
+constexpr shared_from_t<true> shared_from_with_dynamic_cast;
+
+
+struct base_session
+    : std::enable_shared_from_this<base_session> 
 {
-    virtual void connect() {
-        std::shared_ptr<session> self = shared_from_this(this);
+    virtual ~base_session() = default;
+};
+
+struct session
+    : base_session 
+{
+    virtual void connect()
+    {
+        std::shared_ptr<session> self = shared_from(this); // OK
         // ... init async connect
     }
 };
 
-struct ssl_session : session
+struct ssl_session 
+    : session
 {
-    void connect() override {
-        std::shared_ptr<ssl_session> self = shared_from_this(this);
+    void connect() override 
+    {
+        std::shared_ptr<ssl_session> self = shared_from_with_dynamic_cast(this); // OK
         // ... init async connect
     }
 };
@@ -109,10 +142,12 @@ struct ssl_session : session
 int main() {
     auto pssl = std::make_shared<ssl_session>(); // OK
     auto psession = std::make_shared<session>(); // OK
-    
+
     using session_ptr = std::shared_ptr<base_session>;
-    std::vector<session_ptr> v = {pssl, psession};  // OK
+    std::vector<session_ptr> v = {pssl, psession}; // OK
 }
 ```
 
-利用参数依赖查找机制获取对象的实际类型，在基类中声明同名的成员函数 `shared_from_this()` 来覆盖原始的函数。
+既然 `shared_from_this()` 无法达到要求，那就写个函数来适配它。`shared_from` 利用参数依赖查找机制获取对象的实际类型，检查对象是否实际派生于 `enable_shared_from_this`，再进行强制类型转换到符合要求的类型。
+
+> 也可以直接使用 `auto self = std::static_pointer_cast<T>(enable_from_this());` 获取，相比 `auto self = shared_from(this)` 要冗长一些。
