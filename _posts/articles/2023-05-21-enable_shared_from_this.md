@@ -74,7 +74,7 @@ int main() {
 
 ## 自定义 `shared_from`
 
-[Run this code](https://godbolt.org/z/czqKGWPPn)
+[Run this code](https://godbolt.org/z/fodKd9q8G)
 ```.cpp
 #include <cassert>
 #include <concepts>
@@ -94,11 +94,11 @@ concept derived_from_enable_shared_from_this = requires(T obj) {
 
 // cpo: shared_from(T* p)
 //      shared_from_with_dynamic_cast(T* p)
-template <bool with_dynamic_cast = false>
+template <bool with_dynamic_cast>
 struct shared_from_t 
 {
     template <derived_from_enable_shared_from_this T>
-    constexpr std::shared_ptr<T> operator()(T* p) const 
+    constexpr auto operator()(T* p) const
     {
         assert(p);
         auto sp = p->shared_from_this();
@@ -111,9 +111,29 @@ struct shared_from_t
         }
     }
 };
-
-constexpr shared_from_t shared_from;
+constexpr shared_from_t<false> shared_from;
 constexpr shared_from_t<true> shared_from_with_dynamic_cast;
+
+// cpo: weak_from(T* p)
+//      weak_from_with_dynamic_cast(T* p)
+template <bool with_dynamic_cast>
+struct weak_from_t 
+{
+    template <derived_from_enable_shared_from_this T>
+    constexpr std::weak_ptr<T> operator()(T* p) const
+    {
+        assert(p);
+        auto wp = p->weak_from_this();
+        if constexpr (std::same_as<T, typename decltype(wp)::element_type>) {
+            return wp;
+        } else {
+            constexpr auto shared_from = shared_from_t<with_dynamic_cast>{};
+            return shared_from(p);
+        }
+    }
+};
+constexpr weak_from_t<false> weak_from;
+constexpr weak_from_t<true> weak_from_with_dynamic_cast;
 
 
 struct base_session
