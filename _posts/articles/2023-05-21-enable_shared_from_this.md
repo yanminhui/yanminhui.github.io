@@ -72,15 +72,16 @@ int main() {
 - `ssl_session` 无法通过继承复用 `session` 的功能，只能通过聚合 `session` 作为成员变量处理。
 - 当继承链长时，通过聚合访问里层函数需要长的名字引用（e.g. `pssl->psession->...`）。
 
-## 自定义 `shared_from`
+## 自定义转换函数
 
-[Run this code](https://godbolt.org/z/fodKd9q8G)
+[Run this code](https://godbolt.org/z/YMr46YWWY)
 ```.cpp
 #include <cassert>
 #include <concepts>
 #include <iostream>
 #include <memory>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 // concept: derived_from_enable_shared_from_this<T>
@@ -92,49 +93,33 @@ concept derived_from_enable_shared_from_this = requires(T obj) {
             std::remove_cvref_t<typename decltype(obj.shared_from_this())::element_type>>>;
 };
 
-// cpo: shared_from(T* p)
-//      shared_from_with_dynamic_cast(T* p)
-template <bool with_dynamic_cast>
-struct shared_from_t 
+// cpo: static_shared_from(T* p)
+//      dynamic_shared_from(T* p)
+//      static_weak_from(T* p)
+//      dynamic_weak_from(T* p)
+template <template <typename> class R, bool with_dynamic_cast>
+struct shared_from_fn 
 {
     template <derived_from_enable_shared_from_this T>
-    constexpr auto operator()(T* p) const
+    constexpr R<T> operator()(T* p) const
     {
         assert(p);
-        auto sp = p->shared_from_this();
-        if constexpr (std::same_as<T, typename decltype(sp)::element_type>) {
-            return sp;
+        using shared_type = decltype(std::declval<T>().shared_from_this());
+        using element_type = typename shared_type::element_type;
+        if constexpr (std::same_as<T, element_type>) {
+            return R<T>{p->weak_from_this()};
         } else if constexpr (with_dynamic_cast) {
-            return std::dynamic_pointer_cast<T>(sp); 
+            return std::dynamic_pointer_cast<T>(p->shared_from_this());
         } else {
-            return std::static_pointer_cast<T>(sp);
+            return std::static_pointer_cast<T>(p->shared_from_this());
         }
     }
 };
-constexpr shared_from_t<false> shared_from;
-constexpr shared_from_t<true> shared_from_with_dynamic_cast;
 
-// cpo: weak_from(T* p)
-//      weak_from_with_dynamic_cast(T* p)
-template <bool with_dynamic_cast>
-struct weak_from_t 
-{
-    template <derived_from_enable_shared_from_this T>
-    constexpr std::weak_ptr<T> operator()(T* p) const
-    {
-        assert(p);
-        auto wp = p->weak_from_this();
-        if constexpr (std::same_as<T, typename decltype(wp)::element_type>) {
-            return wp;
-        } else {
-            constexpr auto shared_from = shared_from_t<with_dynamic_cast>{};
-            return shared_from(p);
-        }
-    }
-};
-constexpr weak_from_t<false> weak_from;
-constexpr weak_from_t<true> weak_from_with_dynamic_cast;
-
+constexpr shared_from_fn<std::shared_ptr, false> static_shared_from;
+constexpr shared_from_fn<std::shared_ptr, true> dynamic_shared_from;
+constexpr shared_from_fn<std::weak_ptr, false> static_weak_from;
+constexpr shared_from_fn<std::weak_ptr, true> dynamic_weak_from;
 
 struct base_session
     : std::enable_shared_from_this<base_session> 
@@ -147,7 +132,7 @@ struct session
 {
     virtual void connect()
     {
-        std::shared_ptr<session> self = shared_from(this); // OK
+        std::shared_ptr<session> self = static_shared_from(this); // OK
         // ... init async connect
     }
 };
@@ -157,7 +142,7 @@ struct ssl_session
 {
     void connect() override 
     {
-        std::shared_ptr<ssl_session> self = shared_from_with_dynamic_cast(this); // OK
+        std::shared_ptr<ssl_session> self = dynamic_shared_from(this); // OK
         // ... init async connect
     }
 };
@@ -171,6 +156,6 @@ int main() {
 }
 ```
 
-既然 `shared_from_this()` 无法达到要求，那就写个函数来适配它。`shared_from` 利用参数依赖查找机制获取对象的实际类型，检查对象是否实际派生于 `enable_shared_from_this`，再进行强制类型转换到符合要求的类型。
+既然 `shared_from_this()` 无法达到要求，那就写个函数来适配它。`shared_from_fn` 利用参数依赖查找机制获取对象的实际类型，检查对象是否实际派生于 `enable_shared_from_this`，再进行强制类型转换到符合要求的类型。
 
-> 也可以直接使用 `auto self = std::static_pointer_cast<T>(enable_from_this());` 获取，相比 `auto self = shared_from(this)` 要冗长一些。
+> 也可以直接使用 `auto self = std::static_pointer_cast<T>(enable_from_this());` 获取，相比 `auto self = static_shared_from(this)` 要冗长一些。
