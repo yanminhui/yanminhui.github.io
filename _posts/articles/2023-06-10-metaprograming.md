@@ -81,7 +81,7 @@ struct fib<0> : integral_constant<int, 0>
 };
 
 static_assert(fib<6>::value == 8);
-static_assert(fib<-900>::value == 0); // fatal error: template instantiation depth exceeds maximum of 900
+static_assert(fib<-1>::value == 0); // fatal error: template instantiation depth exceeds maximum of 900
 ```
 
 当输入 `n < 0` 时，产生 `fatal error: template instantiation depth exceeds maximum of 900` 错误。计算 `fib<n>` 时， `fib<n>::value` 被求值导致无穷递归。
@@ -112,7 +112,46 @@ struct sum<fib<N>...> : integral_constant<T, (fib<N>::value + ...)>
 };
 
 static_assert(fib<6>::value == 8);
-static_assert(fib<-900>::value == 0);
+static_assert(fib<-1>::value == 0);
 ```
 
 在表达式中避免计算内嵌类型 `type_identity::type` 或内嵌值 `value_identity::value`。
+
+## BUG: [Pack expansion into fixed alias template parameter list](https://www.open-std.org/Jtc1/sc22/wg21/docs/cwg_active.html#1430)
+
+Originally, a pack expansion could not expand into a fixed-length template parameter list, but this was changed in N2555. This works fine for most templates, but causes issues with alias templates.
+
+In most cases, an alias template is transparent; when it's used in a template we can just substitute in the dependent template arguments. But this doesn't work if the template-id uses a pack expansion for non-variadic parameters. For example:
+
+    template<class T, class U, class V>
+    struct S {};
+
+    template<class T, class V>
+    using A = S<T, int, V>;
+
+    template<class... Ts>
+    void foo(A<Ts...>);
+
+There is no way to express A<Ts...> in terms of S, so we need to hold onto the A until we have the Ts to substitute in, and therefore it needs to be handled in mangling.
+
+Currently, EDG and Clang reject this testcase, complaining about too few template arguments for A. G++ did as well, but I thought that was a bug. However, on the ABI list John Spicer argued that it should be rejected.
+
+引入间接层来解决该问题：
+
+    template <class T, class U, class V>
+    struct S {};
+
+    template <class T, class V>
+    using A = S<T, int, V>;
+
+    template <template <class...> class C, class... Ts>
+    struct defer {
+        using type = C<Ts...>;
+    };
+
+    // 别名模板参数与 defer 一致
+    template <template <class...> class C, class... Ts>
+    using defer_t = typename defer<C, Ts...>::type;
+
+    template <class... Ts>
+    void foo(defer_t<A, Ts...>);
