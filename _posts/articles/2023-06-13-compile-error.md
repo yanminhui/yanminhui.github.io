@@ -12,6 +12,7 @@ tags: 'C++'
 前不久，Eric Niebler 提升了 `stdexec` 的编译期诊断信息。他利用了 `concept` 在评估失败时编译器会打印出模板参数类型的特征，让那些查询类型属性的 `trait` 返回一个他定制的模板类，然后诊断消息命名成类名作为模板参数打印出来，而不是仅仅返回一个布尔值。
 
 ```.cpp
+// #include <concepts>
 #include <type_traits>
 
 // struct compile_error<What, With...>
@@ -19,36 +20,49 @@ tags: 'C++'
 struct none;
 
 template <class What, class... With>
-struct compile_error
+struct compile_error : std::false_type 
 {
+    using type = compile_error;
 };
 
 template <>
-struct compile_error<none>
+struct compile_error<none> : std::true_type
 {
+    using type = compile_error;
 };
 
-// concept success<compile_error<...>>
+// concept error<T>
+// concept no_error<T>
 //=====================================
 namespace detail {
 
-template <class T>
-struct is_success : std::false_type
-{
-};
+consteval compile_error<none> get_error(...);
 
-template <>
-struct is_success<compile_error<none>> : std::true_type
-{
-};
+template <class What, class... With>
+consteval compile_error<What, With...> get_error(const compile_error<What, With...>*);
 
 template <class T>
-inline constexpr bool is_success_v = is_success<std::remove_cvref_t<T>>::value;
+extern decltype(get_error((T*)nullptr)) error_v;
+
+template <class T>
+using error_t = decltype(error_v<T>);
+
+template <class T>
+concept error_impl = (not T{});
+
+template <class T>
+concept error = error_impl<error_t<T>>;
+
+template <class T>
+concept no_error_impl = T{};
+
+template <class T>
+concept no_error = no_error_impl<error_t<T>>;
 
 } // namespace detail
 
-template <class T>
-concept success = detail::is_success_v<T>;
+using detail::error;
+using detail::no_error;
 
 // Usage
 //=======
@@ -59,14 +73,14 @@ template <class T>
 struct WITH_SIGNATURE;
 
 template <class T>
-constexpr auto is_function()
+struct is_function : std::conditional_t<std::is_function_v<T>, 
+                                        std::true_type, 
+                                        compile_error<NOT_CALLABLE, WITH_SIGNATURE<T>>>
 {
-    if constexpr(std::is_function_v<T>) {
-        return compile_error<none>{};
-    } else {
-        return compile_error<NOT_CALLABLE, WITH_SIGNATURE<T>>{};
-    }
-}
+};
+
+template <class T>
+inline constexpr bool is_function_v = is_function<T>::value;
 
 int add(int a, int b) {
     return a + b;
@@ -74,13 +88,11 @@ int add(int a, int b) {
 
 template <class T>
 #if defined(USE_COMPILE_ERROR)
-    requires requires(T) {
-        {is_function<T>()} -> success;
-    }
+    requires no_error<is_function<T>>
 #else
-    requires std::is_function_v<T>
+    requires is_function_v<T>
 #endif
-void foo(T f)
+void foo(T f) 
 {
 }
 
@@ -99,20 +111,20 @@ int main() {
 
 ```.cpp
 template <class T>
-requires detail::is_success_v<decltype(is_function<T>())>
+requires std::is_same_v<decltype(detail::error_v<is_function<T>>), compile_error<none>>
 void foo(T f) 
 {
 }
 ```
 
-    % cc -std=c++20 diagnostics_example.cpp
-    diagnostics_example.cpp:75:5: error: no matching function for call to 'foo'
+    % clang++ -std=c++20 diagnostics_example.cpp
+    diagnostics_example.cpp:83:5: error: no matching function for call to 'foo'
         foo(add);
         ^~~
-    diagnostics_example.cpp:69:6: note: candidate template ignored: constraints not satisfied [with T = int (*)(int, int)]
+    diagnostics_example.cpp:77:6: note: candidate template ignored: constraints not satisfied [with T = int (*)(int, int)]
     void foo(T f)
         ^
-    diagnostics_example.cpp:67:14: note: because 'detail::is_success_v<decltype(is_function<int (*)(int, int)>())>' evaluated to false
-        requires detail::is_success_v<decltype(is_function<T>())>
-                ^
+    diagnostics_example.cpp:76:10: note: because 'std::is_same_v<decltype(detail::error_v<is_function<int (*)(int, int)> >), compile_error<none> >' evaluated to false
+    requires std::is_same_v<decltype(detail::error_v<is_function<T>>), compile_error<none>>
+            ^
     1 error generated.
