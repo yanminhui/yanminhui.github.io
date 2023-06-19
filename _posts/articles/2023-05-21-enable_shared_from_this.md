@@ -74,91 +74,73 @@ int main() {
 
 ## 扩展 static_pointer_cast / dynamic_pointer_cast
 
-[Run this code](https://godbolt.org/z/K3jbnP5hj)
+[Run this code](https://godbolt.org/z/s3vWz9o4W)
 ```.cpp
 #include <cassert>
 #include <concepts>
-#include <iostream>
-#include <memory>
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+#if __has_include(<boost/smart_ptr.hpp>)
+#   define NS boost
+#   include <boost/smart_ptr.hpp>
+#else
+#   define NS std
+#   include <memory>
+#endif
 
 namespace stdpatch {
 
 // concept: derived_from_enable_shared_from_this<T>
 template <class T>
-concept derived_from_enable_shared_from_this = requires(T p) {
-    p.shared_from_this();
-    requires std::derived_from<
-        std::remove_cvref_t<T>, std::enable_shared_from_this<
-            std::remove_cvref_t<typename decltype(p.shared_from_this())::element_type>>>;
-};
+concept derived_from_enable_shared_from_this = std::derived_from<T,
+    typename std::pointer_traits<decltype(std::declval<T>().shared_from_this())>::element_type>;
+
+namespace detail {
+
+template <class T, derived_from_enable_shared_from_this U> 
+inline auto static_pointer_cast_impl(U* p) noexcept(noexcept(std::declval<U>().shared_from_this()))
+{
+    using shared_type = decltype(std::declval<U>().shared_from_this());
+    using element_type = typename std::pointer_traits<shared_type>::element_type;
+
+    assert(p);
+    if constexpr (std::same_as<T, element_type>) {
+        return p->shared_from_this();
+    } else {
+        return static_pointer_cast<T>(p->shared_from_this()); // ADL
+    }
+}
+
+// shared_ptr<T> static_pointer_cast<T>(U* p)
+template <class T, derived_from_enable_shared_from_this U>
+requires (not std::same_as<T, U>)
+inline auto static_pointer_cast(U* p) noexcept(noexcept(static_pointer_cast_impl<T, U>(nullptr)))
+{
+    return static_pointer_cast_impl<T, U>(p);
+}
 
 // shared_ptr<T> static_pointer_cast(T* p)
-template <derived_from_enable_shared_from_this T> std::shared_ptr<T>
-static_pointer_cast(T* p) noexcept(noexcept(std::declval<T>().shared_from_this()))
+template <derived_from_enable_shared_from_this T> 
+inline auto static_pointer_cast(T* p) noexcept(noexcept(static_pointer_cast_impl<T, T>(nullptr)))
 {
-    using shared_type = decltype(std::declval<T>().shared_from_this());
-    using element_type = typename shared_type::element_type;
-
-    assert(p);
-    if constexpr (std::same_as<T, element_type>) {
-        return p->shared_from_this();
-    } else {
-        return static_pointer_cast<T>(p->shared_from_this());
-    }
+    return static_pointer_cast_impl<T, T>(p);
 }
 
-// shared_ptr<T> static_pointer_cast<T>(shared_ptr<U> p)
-template <class T, class U>
-auto static_pointer_cast(U&& p) noexcept
-{
-    using type = std::remove_cvref_t<U>;
-    using element_type = typename type::element_type;
+} // namespace detail
 
-    (void) static_cast<T*>(static_cast<element_type*>(nullptr));
+using detail::static_pointer_cast;
 
-    return std::static_pointer_cast<T>(std::forward<U>(p));
-}
-
-// shared_ptr<T> dynamic_pointer_cast(T* p)
-template <derived_from_enable_shared_from_this T> std::shared_ptr<T>
-dynamic_pointer_cast(T* p) noexcept(noexcept(std::declval<T>().shared_from_this()))
-{
-    using shared_type = decltype(std::declval<T>().shared_from_this());
-    using element_type = typename shared_type::element_type;
-
-    assert(p);
-    if constexpr (std::same_as<T, element_type>) {
-        return p->shared_from_this();
-    } else {
-        return dynamic_pointer_cast<T>(p->shared_from_this());
-    }
-}
-
-// shared_ptr<T> dyanmic_pointer_cast<T>(shared_ptr<U> p)
-template <class T, class U>
-auto dynamic_pointer_cast(U&& p) noexcept
-{
-    using type = std::remove_cvref_t<U>;
-    using element_type = typename type::element_type;
-
-    (void) dynamic_cast<T*>(static_cast<element_type*>(nullptr));
-
-    return std::dynamic_pointer_cast<T>(std::forward<U>(p));
-}
+// TODO: dynamic_pointer_cast
 
 } // namespace stdpatch
 
-struct base_session
-    : std::enable_shared_from_this<base_session> 
+struct base_session : NS::enable_shared_from_this<base_session> 
 {
-    virtual ~base_session() = default;
 };
 
-struct session
-    : base_session 
+struct session : base_session 
 {
     virtual void connect()
     {
@@ -167,21 +149,21 @@ struct session
     }
 };
 
-struct ssl_session 
-    : session
+struct ssl_session : session
 {
     void connect() override 
     {
-        auto self = stdpatch::dynamic_pointer_cast(this); // OK
+        auto self = stdpatch::static_pointer_cast(this); // OK
         // ... init async connect
     }
 };
 
 int main() {
-    auto pssl = std::make_shared<ssl_session>(); // OK
-    auto psession = std::make_shared<session>(); // OK
+    using namespace NS;
+    auto pssl = make_shared<ssl_session>(); // OK
+    auto psession = make_shared<session>(); // OK
 
-    using session_ptr = std::shared_ptr<base_session>;
+    using session_ptr = shared_ptr<base_session>;
     std::vector<session_ptr> v = {pssl, psession}; // OK
 }
 ```
@@ -194,4 +176,4 @@ int main() {
 
 扩展的 `static_pointer_cast()`，利用参数依赖查找机制获取对象的实际类型，检查对象是否实际派生于 `enable_shared_from_this` 以确保可以取得它存储的指针，然后再使用 `std::static_pointer_cast` 转换到符合要求的类型。
 
-因此，也可以直接使用 `std::static_pointer_cast<T>(enable_from_this())` 获取，只是相比 `stdpatch::static_pointer_cast(this)` 要麻烦一些。
+因此，也可以直接使用 `std::static_pointer_cast<T>(shared_from_this())` 获取，只是相比 `stdpatch::static_pointer_cast(this)` 要麻烦一些。
