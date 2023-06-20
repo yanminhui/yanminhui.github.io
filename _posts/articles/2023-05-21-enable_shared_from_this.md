@@ -72,9 +72,9 @@ int main() {
 - `ssl_session` 无法通过继承复用 `session` 的功能，只能通过聚合 `session` 作为成员变量处理。
 - 当继承链长时，通过聚合访问里层函数需要长的名字引用（e.g. `pssl->psession->...`）。
 
-## 扩展 static_pointer_cast / dynamic_pointer_cast
+## `shared_ptr<T> as_shared(T* p)`
 
-[Run this code](https://godbolt.org/z/s3vWz9o4W)
+[Run this code](https://godbolt.org/z/xzcz3zEY4)
 ```.cpp
 #include <cassert>
 #include <concepts>
@@ -85,56 +85,35 @@ int main() {
 #if __has_include(<boost/smart_ptr.hpp>)
 #   define NS boost
 #   include <boost/smart_ptr.hpp>
+#   include <boost/type_traits/is_virtual_base_of.hpp>
 #else
 #   define NS std
 #   include <memory>
 #endif
-
-namespace stdpatch {
 
 // concept: derived_from_enable_shared_from_this<T>
 template <class T>
 concept derived_from_enable_shared_from_this = std::derived_from<T,
     typename std::pointer_traits<decltype(std::declval<T>().shared_from_this())>::element_type>;
 
-namespace detail {
-
-template <class T, derived_from_enable_shared_from_this U> 
-inline auto static_pointer_cast_impl(U* p) noexcept(noexcept(std::declval<U>().shared_from_this()))
+// shared_ptr<T> as_shared(T* p)
+template <derived_from_enable_shared_from_this T> 
+inline auto as_shared(T* p) noexcept(noexcept(std::declval<T>().shared_from_this()))
 {
-    using shared_type = decltype(std::declval<U>().shared_from_this());
-    using element_type = typename std::pointer_traits<shared_type>::element_type;
+    using shared_type = decltype(std::declval<T>().shared_from_this());
+    using U = typename std::pointer_traits<shared_type>::element_type;
 
     assert(p);
-    if constexpr (std::same_as<T, element_type>) {
+    if constexpr (std::same_as<U, T>) {
         return p->shared_from_this();
+    // } else if constexpr (boost::is_virtual_base_of<U, T>::value) {
+    //     (void)dynamic_cast<T*>(static_cast<U*>(nullptr));
+    //     return dynamic_pointer_cast<T>(p->shared_from_this()); // ADL
     } else {
+        (void)static_cast<T*>(static_cast<U*>(nullptr));
         return static_pointer_cast<T>(p->shared_from_this()); // ADL
     }
 }
-
-// shared_ptr<T> static_pointer_cast<T>(U* p)
-template <class T, derived_from_enable_shared_from_this U>
-requires (not std::same_as<T, U>)
-inline auto static_pointer_cast(U* p) noexcept(noexcept(static_pointer_cast_impl<T, U>(nullptr)))
-{
-    return static_pointer_cast_impl<T, U>(p);
-}
-
-// shared_ptr<T> static_pointer_cast(T* p)
-template <derived_from_enable_shared_from_this T> 
-inline auto static_pointer_cast(T* p) noexcept(noexcept(static_pointer_cast_impl<T, T>(nullptr)))
-{
-    return static_pointer_cast_impl<T, T>(p);
-}
-
-} // namespace detail
-
-using detail::static_pointer_cast;
-
-// TODO: dynamic_pointer_cast
-
-} // namespace stdpatch
 
 struct base_session : NS::enable_shared_from_this<base_session> 
 {
@@ -144,7 +123,7 @@ struct session : base_session
 {
     virtual void connect()
     {
-        auto self = stdpatch::static_pointer_cast(this); // OK
+        auto self = as_shared(this); // OK
         // ... init async connect
     }
 };
@@ -153,7 +132,7 @@ struct ssl_session : session
 {
     void connect() override 
     {
-        auto self = stdpatch::static_pointer_cast(this); // OK
+        auto self = as_shared(this); // OK
         // ... init async connect
     }
 };
@@ -174,6 +153,6 @@ int main() {
 
 由于 `enable_shared_from_this` 存储的指针类型，并不是派生类类型，类似于 `static_pointer_cast` 语义，需要进行类型转换。我们可以考虑拿到 `enable_shared_from_this` 存储的指针，转换到期望的类型，因此可以扩展 `static_pointer_cast` 来达到目的。
 
-扩展的 `static_pointer_cast()`，利用参数依赖查找机制获取对象的实际类型，检查对象是否实际派生于 `enable_shared_from_this` 以确保可以取得它存储的指针，然后再使用 `std::static_pointer_cast` 转换到符合要求的类型。
+扩展的 `static_pointer_cast()`，利用参数依赖查找机制获取对象的实际类型，检查对象是否实际派生于 `enable_shared_from_this` 以确保可以取得它存储的指针，然后再使用 `std::static_pointer_cast` 转换到符合要求的类型。当基类是虚继承时，无法使用 `static_pointer_cast()`，为了兼容这种情况，将这个扩展的函数改名为 `as_shared()`。
 
-因此，也可以直接使用 `std::static_pointer_cast<T>(shared_from_this())` 获取，只是相比 `stdpatch::static_pointer_cast(this)` 要麻烦一些。
+因此，也可以直接使用 `std::static_pointer_cast<T>(shared_from_this())` 或 `std::dynamic_pointer_cast<T>(shared_from_this())` 获取，只是相比 `as_shared(this)` 要麻烦一些。
