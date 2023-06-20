@@ -156,3 +156,74 @@ int main() {
 扩展的 `static_pointer_cast()`，利用参数依赖查找机制获取对象的实际类型，检查对象是否实际派生于 `enable_shared_from_this` 以确保可以取得它存储的指针，然后再使用 `std::static_pointer_cast` 转换到符合要求的类型。当基类是虚继承时，无法使用 `static_pointer_cast()`，为了兼容这种情况，将这个扩展的函数改名为 `as_shared()`。
 
 因此，也可以直接使用 `std::static_pointer_cast<T>(shared_from_this())` 或 `std::dynamic_pointer_cast<T>(shared_from_this())` 获取，只是相比 `as_shared(this)` 要麻烦一些。
+
+## 类型擦除
+
+[Run this code](https://godbolt.org/z/YbPn6dbd5)
+```.cpp
+// concept: member_function_get_shared<T>
+template <class T>
+concept member_function_get_shared = not derived_from_enable_shared_from_this<T> && 
+    requires(T* p) {
+        static_pointer_cast<T>(p->get_shared());
+    };
+
+// overload: shared_ptr<T> as_shared(T* p)
+template <member_function_get_shared T>
+inline auto as_shared(T* p)
+{
+    using shared_type = decltype(std::declval<T>().get_shared());
+    using U = typename std::pointer_traits<shared_type>::element_type;
+
+    if constexpr (std::same_as<U, T>) {
+        return p->get_shared();
+    } else {
+        (void)static_cast<T*>(static_cast<U*>(nullptr));
+        return static_pointer_cast<T>(p->get_shared());
+    }
+}
+
+// Example:
+//==========
+using namespace std;
+
+struct A 
+{
+    virtual ~A() = default;
+    virtual shared_ptr<void> get_shared() const = 0;
+
+    void foo1() {
+        auto self = as_shared(this);
+        // ...
+    }
+};
+
+struct B
+{
+    virtual ~B() = default;
+    virtual shared_ptr<void> get_shared() const = 0;
+
+    void foo2() const {
+        auto self = as_shared(this);
+        // ...
+    }
+};
+
+struct C : enable_shared_from_this<C>, A, B
+{
+    shared_ptr<void> get_shared() const override 
+    {
+        return static_pointer_cast<void>(const_cast<C*>(this)->shared_from_this());
+    }
+};
+
+int main() 
+{
+    auto c = make_shared<C>();
+    // ...
+}
+```
+
+有时候，可能需要继承多个类，这些类内需要使用 `shared_ptr` 来做一些异步逻辑，然而无法在这些类上继承 `enable_shared_from_this`。这种情况可以考虑使用模板方法，在这些类上定义一个获取 `shared_ptr` 的接口，如 `get_shared()`，由最终的实现者来实现。
+
+在基类上要获取的 `shared_ptr` 元素类型应该是基类本身，有多个基类的情况下，应让 `get_shared()` 返回的类型一致，这个时候考虑类型擦除，返回一个 `shared_ptr<void>`。但是在类里面使用 `shared_ptr<void>` 是相当不便的，这时可以重载 `as_shared()` 进行处理。 
