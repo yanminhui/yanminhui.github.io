@@ -1,0 +1,53 @@
+@startuml
+
+class strand_service
+{
+    - mutex _M_mutex
+    - strand_impl* _M_first
+}
+service <|-- strand_service
+
+struct strand_impl
+{
+    + atomic_flag _M_lock
+    + bool _M_ready
+    + op_queue<operation> _M_waiting_queue
+    + op_queue<operation> _M_ready_queue
+    + strand_service* _M_service
+    + strand_impl* _M_prev
+    + strand_impl* _M_next
+}
+strand_impl ..> strand_service: use_service<strand_service>
+strand_impl <.. strand_service: weak hold
+
+struct On_exit
+{
+    + strand_invoker* _M_invoker
+
+    + ~On_exit()
+}
+note right of On_exit::~On_exit
+  将 waitting_queue 上的任务转移到 ready_queue，
+  然后使用 defer 触发任务的运行。
+  当任务执行完，更新 _M_ready = false 使 strand 可以再次触发任务的执行。
+end note
+
+struct strand_invoker<Executor>
+{
+    + executor_work<Executor> _M_work
+    + shared_ptr<__strand_impl> _M_impl
+
+    + void operator()()
+}
+strand_invoker "1" ..> "1" strand_impl: strong hold
+strand_invoker "1" ..> "1" On_exit: RAII in operator()
+
+class strand<Executor>
+{
+    - Executor _M_executor
+    - shared_ptr<__strand_impl> _M_impl
+}
+strand "1" --> "1" strand_impl: strong hold
+strand "1" ..> "1" strand_invoker: push to waitting q then run if not _M_read
+
+@enduml
