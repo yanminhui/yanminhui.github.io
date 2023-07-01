@@ -1,0 +1,62 @@
+@startuml
+enum fork_event
+{
+  prepare,
+  parent,
+  child
+}
+
+class service
+{
+    # execution_context& context()
+    
+    - void shutdown_service()
+    - void notify_fork(fork_event e)
+
+    - execution_context& _M_context
+    - type_info* _M_id
+    - service* _M_next
+    - bool _M_shutdown
+}
+
+class execution_context 
+{
+    + void notify_fork(fork_event e)
+
+    # void shutdown_context()
+    # void destroy_context()
+
+    - mutex _M_mutex
+    - service* _M_first_service
+}
+execution_context ..> fork_event
+execution_context "1" o-- "n" service: contains
+
+class system_executor_impl
+{
+    + {static} system_executor_impl& Instance()
+}
+execution_context <|-- system_executor_impl
+
+class reactor_service
+{
+}
+service <|-- reactor_service
+
+class timer_service
+{
+    - reactor_service& _M_reactor
+    - timer_queue<_Clock, _TimerTraits> _M_queue
+}
+service <|-- timer_service
+timer_service ..> system_executor_impl: regist reactor
+timer_service ..> reactor_service: use reactor
+
+class timer
+{
+    - timer_service<_Clock, _TimerTraits>* _M_service;
+    - time_point _M_expiry;
+}
+timer ..> system_executor_impl: regist timer_service
+timer ..> timer_service: use timer_service
+@enduml
