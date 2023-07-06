@@ -73,3 +73,15 @@ struct service_key_type<_Service,
 
 所以，在这种情况下，不应让用户知道 `xxx_service_for_client` 或 `xxx_service_for_server` 的存在，这个工作由实现者来处理，比如把它放到私有命名空间内，让用户意识到不能直接使用这些类。
 
+## 其它
+
+在 asio 里面可以发现一些不带数据的服务也注册到 `execution_context` 中，这有两个好处：
+
+**避免数据竞争** 如下所示，actor 使用 A， A 使用 BCD。如果 A 没有注册，则每实例化一次，将多次调用 `use_service<A, B, C, D>()`。而如果 A 注册了，只需要访问 `use_service<A>()` 一次，而 BCD 则缓存在 A 内部。
+
+                  |--> B
+    actor --> A --|--> C
+                  |--> D
+
+**解决异构问题** 如前面所说，actor 则不需要关心 A 在不同端有不同实现时的差异。
+
