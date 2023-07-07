@@ -1,8 +1,8 @@
 ---
 
 layout: post
-title: '监视器对象'
-subtitle: 'Monitor Object'
+title: '监视器对象模式'
+subtitle: 'Monitor Object Pattern'
 date: 2023-07-07
 categories: [article]
 tags: ['C++', 'Multithreading', 'DesignPatterns'] 
